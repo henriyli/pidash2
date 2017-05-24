@@ -1,0 +1,6 @@
+<ul class="list-nostyle">
+  <li><span class="departure-time-title">Lähtöaika </span><span class="departure-line-title">Linja </span></li>
+  <li data-foreach-item="departures">
+    <span class="departure-time" data-bind="item.minutes"></span><span class="departure-line" data-bind="item.code"></span>
+  </li>
+</ul>

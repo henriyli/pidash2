@@ -1,0 +1,44 @@
+// ----------------------------------------------------------------------------
+// Sass declarations
+// ----------------------------------------------------------------------------
+$background-color:  #ff9618;
+ 
+$title-color:       rgba(255, 255, 255, 0.7);;
+$moreinfo-color:    rgba(255, 255, 255, 0.7);;
+
+// ----------------------------------------------------------------------------
+// Widget-weather styles
+// ----------------------------------------------------------------------------
+.widget.widget-hsl { 
+
+  background-color: $background-color;
+
+  ul {
+    margin-left: 25px;
+    li {
+      text-align: left;
+      .departure-time {
+        text-align: right;
+      }
+    }
+  }
+
+  .departure-time {
+    display: inline-block;
+    width: 80px;
+  }
+
+  .departure-line {
+    margin-left:65px;
+
+  }
+  
+  .title { 
+    color: $title-color;
+  }
+ 
+  .updated-at {
+    color: rgba(0, 0, 0, 0.3);
+  }
+}
+
