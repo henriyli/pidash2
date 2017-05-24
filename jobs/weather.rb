@@ -4,8 +4,7 @@ require 'crack'
 require 'time'
 require 'yaml'
 
-place = 'kumpula, Helsinki'
-# ENTER API KEY
+place = 'kumpula,Helsinki'
 weather_api_token = ''
 
 SCHEDULER.every '5m', :first_in => 0, allow_overlapping: false do |job|
