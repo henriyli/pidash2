@@ -10,9 +10,6 @@ request = Net::HTTP::Post.new(uri)
 request.content_type = "application/graphql"
 # bus / tram / metro stop id
 config = YAML::load_file("pidash.yml")['hsl']
-stop_id = config['stop_ids'].first
-bike_id_1 = config['bike_station_ids'].first
-bike_id_2 = config['bike_station_ids'].last
 
 SCHEDULER.every '45s', :first_in => 0 do |job|
   time = Time.now
@@ -31,7 +28,7 @@ SCHEDULER.every '45s', :first_in => 0 do |job|
 
   stops = ''
   config['stop_ids'].each_with_index do |id, index|
-    stops += "stop_#{index + 1}: stop(id: \"#{stop_id}\") { name stoptimesForPatterns(startTime: 0, timeRange: #{timerange}, numberOfDepartures: 4) { pattern { name } stoptimes { realtimeArrival serviceDay headsign } } } "
+    stops += "stop_#{index + 1}: stop(id: \"#{id}\") { name stoptimesForPatterns(startTime: 0, timeRange: #{timerange}, numberOfDepartures: 4) { pattern { name } stoptimes { realtimeArrival serviceDay headsign } } } "
   end
 
   request.body = "query { #{stops}}"
