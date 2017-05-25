@@ -5,17 +5,25 @@ require 'time'
 require 'yaml'
 
 place = 'kumpula,Helsinki'
-weather_api_token = ''
+api_keys = YAML::load_file("../pidash.yml")
+apikey = api_keys['fmi']
 
 SCHEDULER.every '5m', :first_in => 0, allow_overlapping: false do |job|
   http = Net::HTTP.new('data.fmi.fi')
+  # rounding forecast start time to nearest hour
+  in_half = Time.at(Time.now + 1800)
+  nearest_hour = Time.at(in_half - (in_half.min * 60) - in_half.sec)
+  start_t = nearest_hour.iso8601.split(/\+/).first
+  end_t =  Time.at(nearest_hour + 15 * 3600).iso8601.split(/\+/).first
 
-  point_response = http.request(Net::HTTP::Get.new("/fmi-apikey/#{weather_api_token}/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::simple&place=#{place}&timestep=180&parameters=WeatherSymbol3,temperature&starttime=#{Time.now.iso8601.split(/\+/).first}&endtime=#{(Time.now + 3600 * 15).iso8601.split(/\+/).first}"))
-  response = http.request(Net::HTTP::Get.new("/fmi-apikey/#{weather_api_token}/wfs?request=getFeature&storedquery_id=fmi::observations::weather::timevaluepair&place=#{place}&timestep=10&parameters=temperature"))
+  forecast_query = "/fmi-apikey/#{apikey}/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::simple&place=#{place}&timestep=60&parameters=WeatherSymbol3,temperature&starttime=#{start_t}&endtime=#{end_t}"
+  measurement_query = "/fmi-apikey/#{apikey}/wfs?request=getFeature&storedquery_id=fmi::observations::weather::timevaluepair&place=#{place}&timestep=10&parameters=temperature"
+
+  point_response = http.request(Net::HTTP::Get.new(forecast_query))
+  response = http.request(Net::HTTP::Get.new(measurement_query))
 
   point_data = Crack::XML.parse(point_response.body)
-  first = point_data['wfs:FeatureCollection']['wfs:member'].first
-  symbol_value = first['BsWfs:BsWfsElement']['BsWfs:ParameterValue']
+  symbol_value = point_data['wfs:FeatureCollection']['wfs:member'].first['BsWfs:BsWfsElement']['BsWfs:ParameterValue']
 
   forecasts = []
   point_data['wfs:FeatureCollection']['wfs:member'].each do |k|
@@ -37,11 +45,11 @@ SCHEDULER.every '5m', :first_in => 0, allow_overlapping: false do |job|
   send_event('weather', { :temp => "#{celsius} &deg;C",
                           :title => "Kumpula",
                           :condition => forecast_string(symbol_value),
-                          :forecast2 => forecasts[0],
-                          :forecast4 => forecasts[1],
-                          :forecast6 => forecasts[2],
-                          :forecast8 => forecasts[3],
-                          :forecast10 => forecasts[4],
+                          :forecast1 => forecasts[1],
+                          :forecast2 => forecasts[4],
+                          :forecast3 => forecasts[7],
+                          :forecast4 => forecasts[10],
+                          :forecast5 => forecasts[14],
                           :climacon => climacon_class(symbol_value)})
 end
 

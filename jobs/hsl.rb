@@ -2,7 +2,7 @@
 require 'net/http'
 require 'crack'
 require 'time'
-require 'yaml'
+require 'holidays'
 require 'uri'
 
 uri = URI.parse('http://api.digitransit.fi/routing/v1/routers/hsl/index/graphql')
@@ -14,14 +14,20 @@ bike_id_1 = '139'
 bike_id_2 = '138'
 
 SCHEDULER.every '45s', :first_in => 0 do |job|
+  time = Time.now
+  hour = time.hour
+
   # take it easy at night time
-  night = (Time.now.hour < 5 and Time.now.hour > 23)
-  if night and Time.now.min % 2 == 1
+  night = (hour < 5 and hour > 23)
+  if night and time.min % 2 == 1
     break
   end
 
   # half hour window during daytime, and two hours at night time
-  timerange = (Time.now.hour > 5 and Time.now.hour < 22) ? 1800 : 7200
+  timerange = (hour > 6 and hour < 22) ? 1800 : 7200
+  # extend shorter window to 45 minutes on sundays and holidays
+  if (time.sunday? or Holidays.on(time.to_date, 'fi').any?) and timerange == 1800 then timerange = 2700 end
+
   request.body = "query { stop(id: \"#{stop_id}\") { name stoptimesForPatterns(startTime: 0, timeRange: #{timerange}, numberOfDepartures: 4) { pattern { name } stoptimes { realtimeArrival serviceDay headsign } } } }"
   response = Net::HTTP.start(uri.hostname, uri.port) do |http|
     http.request(request)
