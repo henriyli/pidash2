@@ -16,7 +16,7 @@ After cloning this repository, you'll need to install required dependencies with
 bundle
 ```
 
-You'll also need to provide an api key for the FMI weather widget. Get one at [the Finnish Meteorological Institute's open data website](https://ilmatieteenlaitos.fi/rekisteroityminen-avoimen-datan-kayttajaksi). The app looks for the key in a pidash.yaml file at the repository root. The file contents should look like this:
+You'll also need to provide an api key for the FMI weather widget. Get one at [the Finnish Meteorological Institute's open data website](https://ilmatieteenlaitos.fi/rekisteroityminen-avoimen-datan-kayttajaksi). The app looks for the key in a pidash.yml file at the repository root. The file contents should look like this:
 
 ```
 fmi: enter-your-api-key-here

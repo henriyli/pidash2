@@ -10,6 +10,21 @@ apikey = api_keys['fmi']
 
 weather = {:temp => '- &deg;C'}
 
+SCHEDULER.every '5m', :first_in => 0, allow_overlapping: false do |job2|
+  http = Net::HTTP.new('data.fmi.fi')
+  celsius = '-'
+
+  measurement_query = "/fmi-apikey/#{apikey}/wfs?request=getFeature&storedquery_id=fmi::observations::weather::timevaluepair&place=#{place}&timestep=10&parameters=temperature"
+  response = http.request(Net::HTTP::Get.new(measurement_query))
+
+  measurements = Crack::XML.parse(response.body)['wfs:FeatureCollection']['wfs:member']['omso:PointTimeSeriesObservation']['om:result']['wml2:MeasurementTimeseries']['wml2:point']
+  measurements.each {|point| if (point['wml2:MeasurementTVP']['wml2:value'] != 'NaN') then celsius = point['wml2:MeasurementTVP']['wml2:value'] end} 
+
+  weather[:temp] = "#{celsius} &deg;C"
+
+  send_event('weather', weather)
+end
+
 SCHEDULER.every '15m', :first_in => 0, allow_overlapping: false do |job|
   http = Net::HTTP.new('data.fmi.fi')
 
@@ -42,21 +57,6 @@ SCHEDULER.every '15m', :first_in => 0, allow_overlapping: false do |job|
   weather[:condition] = forecast_string(symbol_value)
   weather[:forecasts] = forecasts.values_at(1,4,7,10,14)
   weather[:climacon] = climacon_class(symbol_value)
-
-  send_event('weather', weather)
-end
-
-SCHEDULER.every '5m', :first_in => '5s', allow_overlapping: false do |job2|
-  http = Net::HTTP.new('data.fmi.fi')
-  celsius = '-'
-
-  measurement_query = "/fmi-apikey/#{apikey}/wfs?request=getFeature&storedquery_id=fmi::observations::weather::timevaluepair&place=#{place}&timestep=10&parameters=temperature"
-  response = http.request(Net::HTTP::Get.new(measurement_query))
-
-  measurements = Crack::XML.parse(response.body)['wfs:FeatureCollection']['wfs:member']['omso:PointTimeSeriesObservation']['om:result']['wml2:MeasurementTimeseries']['wml2:point']
-  measurements.each {|point| if (point['wml2:MeasurementTVP']['wml2:value'] != 'NaN') then celsius = point['wml2:MeasurementTVP']['wml2:value'] end} 
-
-  weather[:temp] = "#{celsius} &deg;C"
 
   send_event('weather', weather)
 end
