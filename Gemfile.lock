@@ -67,6 +67,7 @@ DEPENDENCIES
   crack
   dashing
   holidays
+  thin
 
 BUNDLED WITH
    1.15.0
