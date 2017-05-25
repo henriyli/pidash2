@@ -5,7 +5,7 @@ require 'time'
 require 'yaml'
 
 place = 'kumpula,Helsinki'
-api_keys = YAML::load_file("../pidash.yml")
+api_keys = YAML::load_file("pidash.yml")
 apikey = api_keys['fmi']
 
 weather = {:temp => '- &deg;C'}
