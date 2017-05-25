@@ -16,11 +16,16 @@ After cloning this repository, you'll need to install required dependencies with
 bundle
 ```
 
-You'll also need to provide an api key for the FMI weather widget. Get one at [the Finnish Meteorological Institute's open data website](https://ilmatieteenlaitos.fi/rekisteroityminen-avoimen-datan-kayttajaksi). The app looks for the key in a pidash.yml file at the repository root. The file contents should look like this:
+You'll also need to provide a configuration file for the widgets. In the configuration you should define an api key for the FMI weather widget.  Get one at [the Finnish Meteorological Institute's open data website](https://ilmatieteenlaitos.fi/rekisteroityminen-avoimen-datan-kayttajaksi). Additionally, you should also define the HSL bike stations and bus stops you wish to see. The app looks for the key in a pidash.yml file at the repository root. The file contents should look like this:
 
 ```
 fmi: enter-your-api-key-here
+hsl:
+  bike_station_ids: ['092', '127']
+  stop_ids: ['HSL:1113131']
 ```
+
+You can configure the dashboard layout by editing dashboards/sample.erb to your liking.
 
 Now you should be able to start the application by running:
 

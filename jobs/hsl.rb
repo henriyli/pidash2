@@ -9,9 +9,10 @@ uri = URI.parse('http://api.digitransit.fi/routing/v1/routers/hsl/index/graphql'
 request = Net::HTTP::Post.new(uri)
 request.content_type = "application/graphql"
 # bus / tram / metro stop id
-stop_id = 'HSL:1230101'
-bike_id_1 = '139'
-bike_id_2 = '138'
+config = YAML::load_file("pidash.yml")['hsl']
+stop_id = config['stop_ids'].first
+bike_id_1 = config['bike_station_ids'].first
+bike_id_2 = config['bike_station_ids'].last
 
 SCHEDULER.every '45s', :first_in => 0 do |job|
   time = Time.now
@@ -28,43 +29,45 @@ SCHEDULER.every '45s', :first_in => 0 do |job|
   # extend shorter window to 45 minutes on sundays and holidays
   if (time.sunday? or Holidays.on(time.to_date, 'fi').any?) and timerange == 1800 then timerange = 2700 end
 
-  request.body = "query { stop(id: \"#{stop_id}\") { name stoptimesForPatterns(startTime: 0, timeRange: #{timerange}, numberOfDepartures: 4) { pattern { name } stoptimes { realtimeArrival serviceDay headsign } } } }"
+  stops = ''
+  config['stop_ids'].each_with_index do |id, index|
+    stops += "stop_#{index + 1}: stop(id: \"#{stop_id}\") { name stoptimesForPatterns(startTime: 0, timeRange: #{timerange}, numberOfDepartures: 4) { pattern { name } stoptimes { realtimeArrival serviceDay headsign } } } "
+  end
+
+  request.body = "query { #{stops}}"
   response = Net::HTTP.start(uri.hostname, uri.port) do |http|
     http.request(request)
   end
+  stop_result = Crack::JSON.parse(response.body)['data']
 
-  request.body = "query { bikeRentalStation(id:\"#{bike_id_1}\") { name bikesAvailable spacesAvailable } }"
-  response1 = Net::HTTP.start(uri.hostname, uri.port) do |http|
+  stations = ''
+  config['bike_station_ids'].each_with_index do |id, index|
+    stations += "bike_#{index + 1}: bikeRentalStation(id:\"#{id}\") { name bikesAvailable spacesAvailable } "
+  end
+  request.body = "query { #{stations}}"
+  bike_response = Net::HTTP.start(uri.hostname, uri.port) do |http|
     http.request(request)
   end
 
-  request.body = "query { bikeRentalStation(id:\"#{bike_id_2}\") { name bikesAvailable spacesAvailable } }"
-  response2 = Net::HTTP.start(uri.hostname, uri.port) do |http|
-    http.request(request)
-  end
-
-  stop_result = Crack::JSON.parse(response.body)['data']['stop']
-  departures = []
-
-  stop_result['stoptimesForPatterns'].each do |line|
-    name = line['pattern']['name'].split[0]
-    line['stoptimes'].each do |dep|
-      arrival = dep['realtimeArrival'] + dep['serviceDay']
-      sign = dep['headsign'].split[0]
-      departures.push({:time => arrival.to_i, :str => Time.at((Time.at(arrival.to_i) - Time.now)).min.to_s + ' min', :sign => sign, :line => name})
+  stop_result.each do |id, stop|
+    departures = []
+    stop['stoptimesForPatterns'].each do |line|
+      name = line['pattern']['name'].split[0]
+      line['stoptimes'].each do |dep|
+        arrival = dep['realtimeArrival'] + dep['serviceDay']
+        sign = dep['headsign'].split[0]
+        departures.push({:time => arrival.to_i, :str => Time.at((Time.at(arrival.to_i) - Time.now)).min.to_s + ' min', :sign => sign, :line => name})
+      end
     end
+    departures = departures.sort_by {|dep| dep[:time]}
+    event_id = id.dup.sub! '_', '-'
+    send_event(event_id, {:title => stop['name'], :departures => departures.take(5)})
   end
-  departures = departures.sort_by {|dep| dep[:time]}
 
-  stop_1 = {:title => stop_result['name'], :departures => departures.take(5)}
+  bike_result = Crack::JSON.parse(bike_response.body)['data']
+  bike_result.each do |id, station|
+    event_id = id.dup.sub! '_', '-'
+    send_event(event_id, {:title => station['name'], :max => station['spacesAvailable'] + station['bikesAvailable'], :value => station['bikesAvailable']})
+  end
 
-  bike_result_1 = Crack::JSON.parse(response1.body)['data']['bikeRentalStation']
-  bike_1 = {:title => bike_result_1['name'], :max => bike_result_1['spacesAvailable'] + bike_result_1['bikesAvailable'], :value => bike_result_1['bikesAvailable']}
-
-  bike_result_2 = Crack::JSON.parse(response2.body)['data']['bikeRentalStation']
-  bike_2 = {:title => bike_result_2['name'], :max => bike_result_2['spacesAvailable'] + bike_result_2['bikesAvailable'], :value => bike_result_2['bikesAvailable']}
-
-  send_event('hsl-stop-1', stop_1)
-  send_event('hsl-bike-1', bike_1)
-  send_event('hsl-bike-2', bike_2)
 end
