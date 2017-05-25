@@ -9,7 +9,7 @@ console.log("Make pidash great again!")
 
 Dashing.on 'ready', ->
   Dashing.widget_margins ||= [5, 5]
-  Dashing.widget_base_dimensions ||= [255, 227.5]
+  Dashing.widget_base_dimensions ||= [255, 228]
   Dashing.numColumns ||= 3
 
   contentWidth = 800
