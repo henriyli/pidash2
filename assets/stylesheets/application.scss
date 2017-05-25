@@ -246,7 +246,11 @@ h3 {
 }
 
 #container {
-  padding-top: 5px;
+  .gridster {
+    ul {
+      margin: 0 !important;
+    }
+  }
 }
 
 

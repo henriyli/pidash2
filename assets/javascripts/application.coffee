@@ -9,10 +9,10 @@ console.log("Make pidash great again!")
 
 Dashing.on 'ready', ->
   Dashing.widget_margins ||= [5, 5]
-  Dashing.widget_base_dimensions ||= [250, 225]
+  Dashing.widget_base_dimensions ||= [255, 227.5]
   Dashing.numColumns ||= 3
 
-  contentWidth = (Dashing.widget_base_dimensions[0] + Dashing.widget_margins[0] * 2) * Dashing.numColumns
+  contentWidth = 800
 
   Batman.setImmediate ->
     $('.gridster').width(contentWidth)
