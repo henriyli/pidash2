@@ -25,7 +25,6 @@ SCHEDULER.every '10m', :first_in => 0, allow_overlapping: false do |job|
   end_t =  Time.at(nearest_hour + 15 * 3600).iso8601.split(/\+/).first
 
   forecast_query = "/fmi-apikey/#{apikey}/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::simple&place=#{place}&timestep=60&parameters=WeatherSymbol3,temperature&starttime=#{start_t}&endtime=#{end_t}"
-  puts forecast_query
   point_response = http.request(Net::HTTP::Get.new(forecast_query))
   
   point_data = Crack::XML.parse(point_response.body)

@@ -7,7 +7,7 @@ class Dashing.Clock extends Dashing.Widget
     today = new Date()
 
     daysFin = ['Sunnuntai','Maanantai','Tiistai','Keskiviikko','Torstai','Perjantai','Lauantai','Sunnuntai'] 
-    monthsFin = ['','Tammikuuta','Helmikuuta','Maaliskuuta','Huhtikuuta','Toukokuuta','Kesäkuuta','Heinäkuuta','Elokuuta','Syyskuuta','Lokakuuta','Marraskuuta','Joulukuuta'] 
+    monthsFin = ['Tammikuuta','Helmikuuta','Maaliskuuta','Huhtikuuta','Toukokuuta','Kesäkuuta','Heinäkuuta','Elokuuta','Syyskuuta','Lokakuuta','Marraskuuta','Joulukuuta']
 
     h = today.getHours()
     m = today.getMinutes()
