@@ -8,9 +8,7 @@ place = 'kumpula,Helsinki'
 api_keys = YAML::load_file("pidash.yml")
 apikey = api_keys['fmi']
 
-weather = {:temp => '- &deg;C'}
-
-SCHEDULER.every '5m', :first_in => 0, allow_overlapping: false do |job2|
+SCHEDULER.every '10m', :first_in => 0, allow_overlapping: false do |job|
   http = Net::HTTP.new('data.fmi.fi')
   celsius = '-'
 
@@ -20,14 +18,6 @@ SCHEDULER.every '5m', :first_in => 0, allow_overlapping: false do |job2|
   measurements = Crack::XML.parse(response.body)['wfs:FeatureCollection']['wfs:member']['omso:PointTimeSeriesObservation']['om:result']['wml2:MeasurementTimeseries']['wml2:point']
   measurements.each {|point| if (point['wml2:MeasurementTVP']['wml2:value'] != 'NaN') then celsius = point['wml2:MeasurementTVP']['wml2:value'] end} 
 
-  weather[:temp] = "#{celsius} &deg;C"
-
-  send_event('weather', weather)
-end
-
-SCHEDULER.every '15m', :first_in => 0, allow_overlapping: false do |job|
-  http = Net::HTTP.new('data.fmi.fi')
-
   # rounding forecast start time to nearest hour
   in_half = Time.at(Time.now + 1800)
   nearest_hour = Time.at(in_half - (in_half.min * 60) - in_half.sec)
@@ -35,6 +25,7 @@ SCHEDULER.every '15m', :first_in => 0, allow_overlapping: false do |job|
   end_t =  Time.at(nearest_hour + 15 * 3600).iso8601.split(/\+/).first
 
   forecast_query = "/fmi-apikey/#{apikey}/wfs?request=getFeature&storedquery_id=fmi::forecast::hirlam::surface::point::simple&place=#{place}&timestep=60&parameters=WeatherSymbol3,temperature&starttime=#{start_t}&endtime=#{end_t}"
+  puts forecast_query
   point_response = http.request(Net::HTTP::Get.new(forecast_query))
   
   point_data = Crack::XML.parse(point_response.body)
@@ -54,9 +45,10 @@ SCHEDULER.every '15m', :first_in => 0, allow_overlapping: false do |job|
     end
   end
   
-  weather[:condition] = forecast_string(symbol_value)
-  weather[:forecasts] = forecasts.values_at(1,4,7,10,14)
-  weather[:climacon] = climacon_class(symbol_value)
+  weather = { :temp => "#{celsius} &deg;C",
+              :condition => forecast_string(symbol_value),
+              :forecasts => forecasts.values_at(1,4,7,10,14),
+              :climacon => climacon_class(symbol_value)}
 
   send_event('weather', weather)
 end
